@@ -1,14 +1,26 @@
 ---
 title: "Boston housing"
 author: "Tristan-Mihai Radulescu, Hugo Ponthieu, Benoit Planche"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
+library(ggplot2)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
 BostonHousing <- read.csv("./BostonHousing.csv")
 head(BostonHousing)
+```
+
+```{r}
+pairs(data=BostonHousing,
+  ~ crim + zn + indus + chas + nox + rm + age + dis + rad + tax + ptratio + b + lstat + medv)
+
+```
+
+```{r}
+lin_reg <- lm(medv ~ rm, data=BostonHousing)
+ggplot(data=BostonHousing, aes(x=medv, y=rm)) + geom_point() + geom_smooth(method="lm")
 ```
