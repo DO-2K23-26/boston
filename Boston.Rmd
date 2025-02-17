@@ -1,17 +1,21 @@
 ---
 title: "Boston housing"
 author: "Tristan-Mihai Radulescu, Hugo Ponthieu, Benoit Planche"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 library(ggplot2)
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
 BostonHousing <- read.csv("./BostonHousing.csv")
 head(BostonHousing)
+str(BostonHousing)
 ```
 
 ```{r}
@@ -23,4 +27,22 @@ pairs(data=BostonHousing,
 ```{r}
 lin_reg <- lm(medv ~ rm, data=BostonHousing)
 ggplot(data=BostonHousing, aes(x=medv, y=rm)) + geom_point() + geom_smooth(method="lm")
+```
+Can you make a box plot of the value of the rivers in the BostonHousing dataset? 
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Create a boxplot for 'medv' colored by 'chas'
+ggplot(BostonHousing, aes(x = factor(chas), y = medv, fill = factor(chas))) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Median Home Values by River Boundary",
+       x = "Bounds River",
+       y = "Median Home Value (in $1000s)",
+       fill = "Bounds River") +
+  scale_fill_manual(values = c("No" = "red", "Yes" = "blue")) +
+  theme_minimal()
+
+
 ```
