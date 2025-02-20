@@ -9,6 +9,9 @@ output:
 ```{r setup, include=FALSE}
 library(ggplot2)
 library(knitr)
+library(tidyverse)
+library(broom)
+library(GGally)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -18,15 +21,60 @@ head(BostonHousing)
 str(BostonHousing)
 ```
 
-```{r}
-pairs(data=BostonHousing,
-  ~ crim + zn + indus + chas + nox + rm + age + dis + rad + tax + ptratio + b + lstat + medv)
+## Histogram on Medv
 
+```{r}
+hist(BostonHousing$medv, breaks = 15)
+```
+
+On this histogram, we can see that the distribution is not normal. The mode is at arout 20 to 25.
+
+
+## Linear regression
+
+```{r}
+pairs(
+  data = BostonHousing,
+  ~.
+)
 ```
 
 ```{r}
-lin_reg <- lm(medv ~ rm, data=BostonHousing)
-ggplot(data=BostonHousing, aes(x=medv, y=rm)) + geom_point() + geom_smooth(method="lm")
+lin_reg <- lm(medv ~ rm, data = BostonHousing)
+ggplot(data = BostonHousing, aes(x = medv, y = rm)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+## Linear Multiple Regression
+
+### Backward Elimination
+
+```{r}
+model <- lm(medv ~ ., data = BostonHousing)
+
+summary(model)
+
+backward_model <- step(model, direction = "backward", trace = FALSE)
+
+summary(backward_model)
+
+
+plot(backward_model)
+```
+
+## Perfect linear regression
+
+```{r}
+lin_reg <- lm(medv ~ medv, data = BostonHousing)
+plot(lin_reg)
+```
+
+## Worst linear regression
+
+```{r}
+lin_reg <- lm(medv ~ indus, data = BostonHousing)
+plot(lin_reg)
 ```
 Can you make a box plot of the value of the rivers in the BostonHousing dataset? 
 
