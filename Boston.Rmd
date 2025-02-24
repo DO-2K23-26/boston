@@ -159,8 +159,8 @@ ggplot(BostonHousing, aes(x = lstat, y = medv)) +
 
 ---
 
-# 🏠 **7. Impact of Crime and Taxation on Home Prices**
-## 🔍 **7.1 Distribution of `crim` and `tax`**
+# **7. Impact of Crime and Taxation on Home Prices**
+## **7.1 Distribution of `crim` and `tax`**
 ```{r tax-crim, echo=FALSE}
 ggplot(BostonHousing, aes(x = crim)) +
   geom_histogram(fill = "red", bins = 30, alpha = 0.7) +
