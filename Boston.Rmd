@@ -222,5 +222,5 @@ summary(reg_multi)
 # **Conclusion**
 This analysis shows that **the number of rooms (`rm`), crime rate (`crim`), and tax rate (`tax`) strongly influence home prices**.  
 
-**Suggestions:** Further testing with advanced multiple regression models and interaction effects. 🚀  
+**Suggestions:** Further testing with advanced multiple regression models and interaction effects.
 ```
