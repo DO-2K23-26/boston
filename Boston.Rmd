@@ -19,6 +19,8 @@ library(knitr)
 library(tidyverse)
 library(broom)
 library(GGally)
+library(MASS)
+library(randomForest)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -91,10 +93,6 @@ plot(lin_reg)
 Can you make a box plot of the value of the rivers in the BostonHousing dataset? 
 
 ```{r}
-# Load necessary libraries
-library(ggplot2)
-
-# Create a boxplot for 'medv' colored by 'chas'
 ggplot(BostonHousing, aes(x = factor(chas), y = medv, fill = factor(chas))) +
   geom_boxplot(alpha = 0.7) +
   labs(title = "Boxplot of Median Home Values by River Proximity",
@@ -219,8 +217,82 @@ summary(reg_multi)
 
 ---
 
-# **Conclusion**
-This analysis shows that **the number of rooms (`rm`), crime rate (`crim`), and tax rate (`tax`) strongly influence home prices**.  
 
-**Suggestions:** Further testing with advanced multiple regression models and interaction effects.
+# **9. Separate data between train and test**
+```{r}
+# Load necessary libraries
+set.seed(123)
+sample_size <- floor(0.8 * nrow(BostonHousing))
+train_indices <- sample(seq_len(nrow(BostonHousing)), size = sample_size)
+train_data <- BostonHousing[train_indices, ]
+test_data <- BostonHousing[-train_indices, ]
+
+initial_model <- lm(medv ~ 1, data = train_data)
+
+
+```
+
+# **9.1. Forward Selection**
+```{r}
+forward_model <- stepAIC(initial_model, direction = "forward", scope = list(lower=initial_model, upper=~crim+ zn+ indus+chas +nox+rm+ age +dis+rad+tax+ptratio+b+lstat ))
+```
+
+
+
+```{r}
+plot(forward_model, which=2)
+summary(forward_model)
+
+test_predictions <- predict(forward_model, newdata = test_data)
+
+actual_vs_predicted <- data.frame(Actual = test_data$medv, Predicted = test_predictions)
+
+residuals <- data.frame(Predicted = test_predictions, Residuals = test_data$medv - test_predictions)
+
+ggplot(residuals, aes(x = Predicted, y = Residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Residual Plot", x = "Predicted Values", y = "Residuals") +
+  theme_minimal() +
+  # Ensure the full range of predicted values is shown
+  coord_cartesian(xlim = range(test_predictions))
+correlation_matrix <- cor(train_data)
+```
+
+# **9.2. Correlation Matrix**
+```{r}
+ggplot(reshape2::melt(correlation_matrix), aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limit = c(-1, 1), space = "Lab", name = "Pearson\nCorrelation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1)) +
+  coord_fixed()
+
+```
+
+# **9.3. Random Forest Model**
+```{r}
+set.seed(123)
+rf_model <- randomForest(medv ~ ., data = train_data, importance = TRUE)
+rf_predictions <- predict(rf_model, newdata = test_data)
+# Evaluate the model
+actual_vs_predicted_rf <- data.frame(Actual = test_data$medv, Predicted = rf_predictions)
+
+# Plot actual vs predicted values
+ggplot(actual_vs_predicted_rf, aes(x = Actual, y = Predicted)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = "Actual vs Predicted Values (Random Forest)", x = "Actual Values", y = "Predicted Values") +
+  theme_minimal()
+
+```
+
+# **9.4. Decision Tree**
+```{r}
+# Plot a tree using rpart
+library(rpart)
+tree_model <- rpart(medv ~ ., data = train_data)
+
+library(rpart.plot)
+rpart.plot(tree_model, cex = 0.8)
 ```
