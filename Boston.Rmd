@@ -21,6 +21,12 @@ library(broom)
 library(GGally)
 library(MASS)
 library(randomForest)
+library(rsample)
+library(dplyr)
+library(rpart)
+library(rpart.plot)
+library(ipred)
+library(caret)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -65,7 +71,7 @@ ggplot(data = BostonHousing, aes(x = medv, y = rm)) +
 ### Backward Elimination
 
 ```{r}
-model <- lm(medv ~ ., data = BostonHousing)
+model <- lm(log(medv) ~ ., data = BostonHousing)
 
 summary(model)
 
@@ -77,12 +83,13 @@ summary(backward_model)
 plot(backward_model)
 ```
 
-## Perfect linear regression
-
 ```{r}
 lin_reg <- lm(medv ~ medv, data = BostonHousing)
 plot(lin_reg)
 ```
+
+## Trees
+
 
 ## Worst linear regression
 
@@ -296,3 +303,4 @@ tree_model <- rpart(medv ~ ., data = train_data)
 library(rpart.plot)
 rpart.plot(tree_model, cex = 0.8)
 ```
+As we can see, the model is not very good. We can try to improve it by using a tree. Intuitively, we can see that our data is segmented in three groups. One group is the one with the lowest medv, one group is the one with the highest medv and the third group is in between. But let's use trees to segment these groups correctly.
