@@ -71,7 +71,7 @@ ggplot(data = BostonHousing, aes(x = medv, y = rm)) +
 ### Backward Elimination
 
 ```{r}
-model <- lm(log(medv) ~ ., data = BostonHousing)
+model <- lm(medv ~ ., data = BostonHousing)
 
 summary(model)
 
@@ -86,6 +86,43 @@ plot(backward_model)
 ```{r}
 lin_reg <- lm(medv ~ medv, data = BostonHousing)
 plot(lin_reg)
+```
+## Multiple linear regression with normalized data
+
+```{r}
+normalized_data <- preProcess(BostonHousing, method = c("center", "scale"))
+
+normalized_data <- predict(normalized_data, BostonHousing)
+```
+### Boxplots
+
+```{r}
+boxplot(BostonHousing)
+boxplot(normalized_data)
+```
+
+### Scatterplot
+
+```{r}
+ggplot(data = normalized_data, aes(x = rm, y = medv)) +
+  geom_point()
+```
+
+### Correlation matrix
+
+```{r}
+cor(normalized_data)
+```
+
+
+### Linear regression
+
+```{r}
+model <- lm(medv ~ ., data = normalized_data)
+summary(model)
+backward_model <- step(model, direction = "backward", trace = FALSE)
+summary(backward_model)
+plot(backward_model)
 ```
 
 ## Trees
