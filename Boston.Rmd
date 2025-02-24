@@ -11,7 +11,6 @@ This report analyzes the `BostonHousing` dataset, which contains information abo
 
 ---
 
-# **1. Loading Libraries and Data**
 ```{r setup, include=FALSE}
 # Load necessary libraries
 library(ggplot2)
@@ -23,10 +22,10 @@ library(MASS)
 library(randomForest)
 library(rsample)
 library(dplyr)
-library(rpart)
-library(rpart.plot)
 library(ipred)
 library(caret)
+library(rpart)
+library(rpart.plot)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -38,120 +37,11 @@ BostonHousing <- read.csv("./BostonHousing.csv")
 head(BostonHousing)
 
 # Structure of the dataset
-str(BostonHousing)
-```
-
-## Histogram on Medv
-
-```{r}
-hist(BostonHousing$medv, breaks = 15)
-```
-
-On this histogram, we can see that the distribution is not normal. The mode is at arout 20 to 25.
-
-
-## Linear regression
-
-```{r}
-pairs(
-  data = BostonHousing,
-  ~.
-)
-```
-
-```{r}
-lin_reg <- lm(medv ~ rm, data = BostonHousing)
-ggplot(data = BostonHousing, aes(x = medv, y = rm)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-```
-
-## Linear Multiple Regression
-
-### Backward Elimination
-
-```{r}
-model <- lm(medv ~ ., data = BostonHousing)
-
-summary(model)
-
-backward_model <- step(model, direction = "backward", trace = FALSE)
-
-summary(backward_model)
-
-
-plot(backward_model)
-```
-
-```{r}
-lin_reg <- lm(medv ~ medv, data = BostonHousing)
-plot(lin_reg)
-```
-## Multiple linear regression with normalized data
-
-```{r}
-normalized_data <- preProcess(BostonHousing, method = c("center", "scale"))
-
-normalized_data <- predict(normalized_data, BostonHousing)
-```
-### Boxplots
-
-```{r}
-boxplot(BostonHousing)
-boxplot(normalized_data)
-```
-
-### Scatterplot
-
-```{r}
-ggplot(data = normalized_data, aes(x = rm, y = medv)) +
-  geom_point()
-```
-
-### Correlation matrix
-
-```{r}
-cor(normalized_data)
+# str(BostonHousing)
 ```
 
 
-### Linear regression
-
-```{r}
-model <- lm(medv ~ ., data = normalized_data)
-summary(model)
-backward_model <- step(model, direction = "backward", trace = FALSE)
-summary(backward_model)
-plot(backward_model)
-```
-
-## Trees
-
-
-## Worst linear regression
-
-```{r}
-lin_reg <- lm(medv ~ indus, data = BostonHousing)
-plot(lin_reg)
-```
-Can you make a box plot of the value of the rivers in the BostonHousing dataset? 
-
-```{r}
-ggplot(BostonHousing, aes(x = factor(chas), y = medv, fill = factor(chas))) +
-  geom_boxplot(alpha = 0.7) +
-  labs(title = "Boxplot of Median Home Values by River Proximity",
-       x = "Proximity to the River (0 = No, 1 = Yes)",
-       y = "Median Home Value (in $1000s)",
-       fill = "Proximity") +
-  scale_fill_manual(values = c("0" = "red", "1" = "blue")) +
-  theme_minimal()
-```
-
-**Observation**: Proximity to the river **seems to have a slight impact** on home prices, but the distribution remains fairly similar.  
-
----
-
-# **5. Distribution of Key Variables**
+## **1. Distribution of Key Variables**
 We analyze the distribution of home prices (`medv`).  
 
 ```{r valeur-mediane, echo=FALSE}
@@ -164,7 +54,7 @@ ggplot(BostonHousing, aes(x = medv)) +
 
 ---
 
-# **6. Correlations Between Variables**
+## **2. Correlations Between Variables**
 We compute the correlation matrix and display values associated with `medv`.  
 
 ```{r}
@@ -180,9 +70,17 @@ cor_matrix["medv", ]
 - **Negative correlation** with `lstat` (percentage of lower-status population).  
 - **`tax` and `crim` have a negative relationship** with `medv`.  
 
+
+### **2.1 Pairs**
+
+```{r pairs, echo=FALSE}
+pairs(BostonHousing)
+```
+
 ---
 
-# **6.1 Key Relationships**
+### **2.2 Key Relationships**
+
 ```{r nb-piece, echo=FALSE}
 # Relationship between RM (number of rooms) and MEDV
 ggplot(BostonHousing, aes(x = rm, y = medv)) +
@@ -201,8 +99,8 @@ ggplot(BostonHousing, aes(x = lstat, y = medv)) +
 
 ---
 
-# **7. Impact of Crime and Taxation on Home Prices**
-## **7.1 Distribution of `crim` and `tax`**
+## **3. Impact of Crime and Taxation on Home Prices**
+### **3.1 Distribution of `crim` and `tax`**
 ```{r tax-crim, echo=FALSE}
 ggplot(BostonHousing, aes(x = crim)) +
   geom_histogram(fill = "red", bins = 30, alpha = 0.7) +
@@ -220,7 +118,7 @@ ggplot(BostonHousing, aes(x = tax)) +
 
 ---
 
-## **7.2 Relationship Between Crime Rate and Home Prices**
+### **3.2 Relationship Between Crime Rate and Home Prices**
 ```{r tax-crim2, echo=FALSE}
 ggplot(BostonHousing, aes(x = crim, y = medv)) +
   geom_point(alpha = 0.5, color = "red") +
@@ -235,7 +133,7 @@ ggplot(BostonHousing, aes(x = crim, y = medv)) +
 
 ---
 
-## **7.3 Relationship Between Taxation and Home Prices**
+## **3.3 Relationship Between Taxation and Home Prices**
 ```{r tax-crim3, echo=FALSE}
 ggplot(BostonHousing, aes(x = tax, y = medv)) +
   geom_point(alpha = 0.5, color = "blue") +
@@ -245,11 +143,10 @@ ggplot(BostonHousing, aes(x = tax, y = medv)) +
        y = "Median Home Value (in $1000s)")
 ```
 
-**Observation**: A **higher tax rate is associated with lower home prices**.  
-
 ---
 
-# **8. Multiple Regression Analysis**
+**Observation**: A **higher tax rate is associated with lower home prices**.  
+
 ```{r reg-multiple, echo=FALSE}
 reg_multi <- lm(medv ~ crim + tax, data = BostonHousing)
 summary(reg_multi)
@@ -261,8 +158,61 @@ summary(reg_multi)
 
 ---
 
+## 4. Linear regressions
 
-# **9. Separate data between train and test**
+### 4.1 Based on pairs
+
+```{r}
+lin_reg <- lm(medv ~ rm, data = BostonHousing)
+ggplot(data = BostonHousing, aes(x = medv, y = rm)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+### 4.2 Backward selection
+
+```{r}
+model <- lm(medv ~ ., data = BostonHousing)
+
+summary(model)
+
+backward_model <- step(model, direction = "backward", trace = FALSE)
+
+summary(backward_model)
+
+
+plot(backward_model)
+```
+
+### 4.3 Multiple linear regression with normalized data and backward selection
+
+```{r}
+normalized_data <- preProcess(BostonHousing, method = c("center", "scale"))
+
+normalized_data <- predict(normalized_data, BostonHousing)
+```
+#### 4.3.1 Boxplots
+
+```{r}
+boxplot(BostonHousing)
+boxplot(normalized_data)
+```
+
+#### 4.3.2 Modelization
+
+```{r}
+model <- lm(medv ~ ., data = normalized_data)
+summary(model)
+backward_model <- step(model, direction = "backward", trace = FALSE)
+summary(backward_model)
+plot(backward_model)
+```
+
+---
+
+### 4.4. Forward selection
+#### 4.4.1. Sampling data
 ```{r}
 # Load necessary libraries
 set.seed(123)
@@ -276,7 +226,8 @@ initial_model <- lm(medv ~ 1, data = train_data)
 
 ```
 
-# **9.1. Forward Selection**
+#### 4.4.2. Applying the algorithm
+
 ```{r}
 forward_model <- stepAIC(initial_model, direction = "forward", scope = list(lower=initial_model, upper=~crim+ zn+ indus+chas +nox+rm+ age +dis+rad+tax+ptratio+b+lstat ))
 ```
@@ -303,7 +254,7 @@ ggplot(residuals, aes(x = Predicted, y = Residuals)) +
 correlation_matrix <- cor(train_data)
 ```
 
-# **9.2. Correlation Matrix**
+#### 4.4.3. Correlation Matrix
 ```{r}
 ggplot(reshape2::melt(correlation_matrix), aes(x = Var1, y = Var2, fill = value)) +
   geom_tile() +
@@ -314,7 +265,7 @@ ggplot(reshape2::melt(correlation_matrix), aes(x = Var1, y = Var2, fill = value)
 
 ```
 
-# **9.3. Random Forest Model**
+## 5. Random forest model
 ```{r}
 set.seed(123)
 rf_model <- randomForest(medv ~ ., data = train_data, importance = TRUE)
@@ -331,13 +282,11 @@ ggplot(actual_vs_predicted_rf, aes(x = Actual, y = Predicted)) +
 
 ```
 
-# **9.4. Decision Tree**
+### 5.1. Decision Tree
 ```{r}
 # Plot a tree using rpart
-library(rpart)
 tree_model <- rpart(medv ~ ., data = train_data)
 
-library(rpart.plot)
 rpart.plot(tree_model, cex = 0.8)
 ```
 As we can see, the model is not very good. We can try to improve it by using a tree. Intuitively, we can see that our data is segmented in three groups. One group is the one with the lowest medv, one group is the one with the highest medv and the third group is in between. But let's use trees to segment these groups correctly.
