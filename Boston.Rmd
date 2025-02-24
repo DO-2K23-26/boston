@@ -1,12 +1,19 @@
 ---
-title: "Boston housing"
+title: "Boston Housing"
 author: "Tristan-Mihai Radulescu, Hugo Ponthieu, Benoit Planche"
 output:
   html_document:
     df_print: paged
 ---
 
+# **Introduction**
+This report analyzes the `BostonHousing` dataset, which contains information about housing in Boston. We will explore the relationships between several variables and the median home value (`medv`).  
+
+---
+
+# **1. Loading Libraries and Data**
 ```{r setup, include=FALSE}
+# Load necessary libraries
 library(ggplot2)
 library(knitr)
 library(tidyverse)
@@ -15,9 +22,14 @@ library(GGally)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, echo=FALSE}
+# Load the dataset
 BostonHousing <- read.csv("./BostonHousing.csv")
+
+# Display first rows
 head(BostonHousing)
+
+# Structure of the dataset
 str(BostonHousing)
 ```
 
@@ -84,13 +96,131 @@ library(ggplot2)
 
 # Create a boxplot for 'medv' colored by 'chas'
 ggplot(BostonHousing, aes(x = factor(chas), y = medv, fill = factor(chas))) +
-  geom_boxplot() +
-  labs(title = "Boxplot of Median Home Values by River Boundary",
-       x = "Bounds River",
+  geom_boxplot(alpha = 0.7) +
+  labs(title = "Boxplot of Median Home Values by River Proximity",
+       x = "Proximity to the River (0 = No, 1 = Yes)",
        y = "Median Home Value (in $1000s)",
-       fill = "Bounds River") +
-  scale_fill_manual(values = c("No" = "red", "Yes" = "blue")) +
+       fill = "Proximity") +
+  scale_fill_manual(values = c("0" = "red", "1" = "blue")) +
   theme_minimal()
+```
 
+**Observation**: Proximity to the river **seems to have a slight impact** on home prices, but the distribution remains fairly similar.  
 
+---
+
+# **5. Distribution of Key Variables**
+We analyze the distribution of home prices (`medv`).  
+
+```{r valeur-mediane, echo=FALSE}
+ggplot(BostonHousing, aes(x = medv)) + 
+  geom_histogram(fill = "blue", bins = 30, alpha = 0.7) +
+  labs(title = "Distribution of Home Prices",
+       x = "MEDV (in $1000s)", 
+       y = "Frequency")
+```
+
+---
+
+# **6. Correlations Between Variables**
+We compute the correlation matrix and display values associated with `medv`.  
+
+```{r}
+# Compute correlation matrix
+cor_matrix <- cor(BostonHousing)
+
+# Display correlations with MEDV
+cor_matrix["medv", ]
+```
+
+**Observations**:  
+- **Positive correlation** with `rm` (number of rooms).  
+- **Negative correlation** with `lstat` (percentage of lower-status population).  
+- **`tax` and `crim` have a negative relationship** with `medv`.  
+
+---
+
+# **6.1 Key Relationships**
+```{r nb-piece, echo=FALSE}
+# Relationship between RM (number of rooms) and MEDV
+ggplot(BostonHousing, aes(x = rm, y = medv)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Relationship Between RM and MEDV", x = "Average Number of Rooms", y = "Median Home Value (in $1000s)")
+```
+
+```{r pop-pauvre, echo=FALSE}
+# Relationship between LSTAT (% lower-status population) and MEDV
+ggplot(BostonHousing, aes(x = lstat, y = medv)) +
+  geom_point(alpha = 0.6, color = "purple") +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Relationship Between LSTAT and MEDV", x = "Lower-Status Population (%)", y = "Median Home Value (in $1000s)")
+```
+
+---
+
+# 🏠 **7. Impact of Crime and Taxation on Home Prices**
+## 🔍 **7.1 Distribution of `crim` and `tax`**
+```{r tax-crim, echo=FALSE}
+ggplot(BostonHousing, aes(x = crim)) +
+  geom_histogram(fill = "red", bins = 30, alpha = 0.7) +
+  labs(title = "Distribution of Crime Rate", x = "CRIM", y = "Frequency") +
+  scale_x_log10()
+
+ggplot(BostonHousing, aes(x = tax)) +
+  geom_histogram(fill = "blue", bins = 30, alpha = 0.7) +
+  labs(title = "Distribution of Tax Rate", x = "TAX", y = "Frequency")
+```
+
+**Observations**:  
+- **`crim` is highly skewed**: most neighborhoods have low crime rates, but some areas have extreme values.  
+- **`tax` shows distinct peaks**, suggesting fixed tax rates in certain areas.  
+
+---
+
+## **7.2 Relationship Between Crime Rate and Home Prices**
+```{r tax-crim2, echo=FALSE}
+ggplot(BostonHousing, aes(x = crim, y = medv)) +
+  geom_point(alpha = 0.5, color = "red") +
+  geom_smooth(method = "lm", col = "black") +
+  scale_x_log10() +
+  labs(title = "Relationship Between CRIM and MEDV",
+       x = "Crime Rate (log)", 
+       y = "Median Home Value (in $1000s)")
+```
+
+**Observation**: Home prices **decrease as crime rates increase**.  
+
+---
+
+## **7.3 Relationship Between Taxation and Home Prices**
+```{r tax-crim3, echo=FALSE}
+ggplot(BostonHousing, aes(x = tax, y = medv)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "lm", col = "black") +
+  labs(title = "Relationship Between TAX and MEDV",
+       x = "Tax Rate", 
+       y = "Median Home Value (in $1000s)")
+```
+
+**Observation**: A **higher tax rate is associated with lower home prices**.  
+
+---
+
+# **8. Multiple Regression Analysis**
+```{r reg-multiple, echo=FALSE}
+reg_multi <- lm(medv ~ crim + tax, data = BostonHousing)
+summary(reg_multi)
+```
+
+**Results**:  
+- **The coefficients for `crim` and `tax` are negative**, confirming their negative impact on `medv`.  
+- **p-values < 0.05** indicate these effects are statistically significant.  
+
+---
+
+# **Conclusion**
+This analysis shows that **the number of rooms (`rm`), crime rate (`crim`), and tax rate (`tax`) strongly influence home prices**.  
+
+**Suggestions:** Further testing with advanced multiple regression models and interaction effects. 🚀  
 ```
