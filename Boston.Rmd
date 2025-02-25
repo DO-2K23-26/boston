@@ -73,9 +73,13 @@ cor_matrix["medv", ]
 
 ### **2.1 Pairs**
 
+To get a first grasp of the data, and the different relationships between variables, we can use the `pairs` function.
+
 ```{r pairs, echo=FALSE}
 pairs(BostonHousing)
 ```
+
+Even though there are a lot of modalities, we can see that there is a relationship between `rm` and `medv`, a negative relationship between `lstat` and `medv` and finally `crim` and `medv`. So we will try to model linear regressions between each of these variables.
 
 ---
 
@@ -89,6 +93,8 @@ ggplot(BostonHousing, aes(x = rm, y = medv)) +
   labs(title = "Relationship Between RM and MEDV", x = "Average Number of Rooms", y = "Median Home Value (in $1000s)")
 ```
 
+Here we can see a clear correlation between `rm` and `medv`. Even though there are a few outliers. Also, based on the description of the dataset on kaggle, some data scientists think that the `medv` variable was censored since `medv` often takes the value 50 which is also its maximum. This property makes us question the reliability of this dataset, but anyway.
+
 ```{r pop-pauvre, echo=FALSE}
 # Relationship between LSTAT (% lower-status population) and MEDV
 ggplot(BostonHousing, aes(x = lstat, y = medv)) +
@@ -97,10 +103,12 @@ ggplot(BostonHousing, aes(x = lstat, y = medv)) +
   labs(title = "Relationship Between LSTAT and MEDV", x = "Lower-Status Population (%)", y = "Median Home Value (in $1000s)")
 ```
 
+Here we can se that the relationship between `lstat` and `medv` is negative. The hypothesis would be that a higher percentage of lower-status population will have a lower home value.
+
 ---
 
 ## **3. Impact of Crime and Taxation on Home Prices**
-### **3.1 Distribution of `crim` and `tax`**
+### **3.1 Distribution of `medv`, `crim` and `tax`**
 ```{r tax-crim, echo=FALSE}
 ggplot(BostonHousing, aes(x = crim)) +
   geom_histogram(fill = "red", bins = 30, alpha = 0.7) +
@@ -114,7 +122,7 @@ ggplot(BostonHousing, aes(x = tax)) +
 
 **Observations**:  
 - **`crim` is highly skewed**: most neighborhoods have low crime rates, but some areas have extreme values.  
-- **`tax` shows distinct peaks**, suggesting fixed tax rates in certain areas.  
+- **`tax` shows distinct peaks**, suggesting fixed tax rates in certain areas.
 
 ---
 
@@ -160,23 +168,20 @@ summary(reg_multi)
 
 ## 4. Linear regressions
 
-### 4.1 Based on pairs
+### 4.1 Backward selection
 
-```{r}
-lin_reg <- lm(medv ~ rm, data = BostonHousing)
-ggplot(data = BostonHousing, aes(x = medv, y = rm)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-```
-
-
-### 4.2 Backward selection
+To start, we can try to use the backward selection algorithm to find the best linear regression model to predict `medv`. But first, let's try to add all the variables to the model to see what happens.
 
 ```{r}
 model <- lm(medv ~ ., data = BostonHousing)
 
 summary(model)
 
+```
+
+Obviously, some modalities are not significant (e.g. `indus` or `age`). So let's try to use the backward selection algorithm to find the best model.
+
+```{r}
 backward_model <- step(model, direction = "backward", trace = FALSE)
 
 summary(backward_model)
@@ -185,21 +190,28 @@ summary(backward_model)
 plot(backward_model)
 ```
 
-### 4.3 Multiple linear regression with normalized data and backward selection
+We can see that the model gives us a low `p-value` of 2.2e-16 with a residual standard error of 4.736. To be honest, it is quite hard for us to interpret this indicator since the observed values are not in the same range. Later we will try to normalize our variables to interpret it easily.
+Though, after plotting the model, we can see on the Q-Q plot that the residuals are not normally distributed which means that the linear regression model is not appropriate for our data. Still, we will try the forward selection algorithm to show case our skills 🕶️.
+
+### 4.2 Multiple linear regression with normalized data and backward selection
 
 ```{r}
 normalized_data <- preProcess(BostonHousing, method = c("center", "scale"))
 
 normalized_data <- predict(normalized_data, BostonHousing)
 ```
-#### 4.3.1 Boxplots
+
+
+#### 4.2.1 Boxplots
 
 ```{r}
 boxplot(BostonHousing)
 boxplot(normalized_data)
 ```
 
-#### 4.3.2 Modelization
+The goal of these boxplots is to show how the data is distributed. We can see on the boxplot below that the every modalities have the average of 0 and the same range.
+
+#### 4.2.2 Modelization
 
 ```{r}
 model <- lm(medv ~ ., data = normalized_data)
@@ -209,10 +221,13 @@ summary(backward_model)
 plot(backward_model)
 ```
 
+On our normalized data, we can see that our model didn't change much. The only output that changed is the residual standard error which is 0.515. This value is quite high which confirm us that this model is not the best for our use case.
+
 ---
 
-### 4.4. Forward selection
-#### 4.4.1. Sampling data
+### 4.3. Forward selection
+#### 4.3.1. Sampling data
+
 ```{r}
 # Load necessary libraries
 set.seed(123)
@@ -222,20 +237,23 @@ train_data <- BostonHousing[train_indices, ]
 test_data <- BostonHousing[-train_indices, ]
 
 initial_model <- lm(medv ~ 1, data = train_data)
-
-
 ```
 
-#### 4.4.2. Applying the algorithm
+This time we will use the `stepAIC` function to apply the forward selection algorithm. We will use the initial model as the lower bound and the model with all the variables as the upper bound. Before hand we used a different library.
+
+#### 4.3.2. Applying the algorithm
 
 ```{r}
 forward_model <- stepAIC(initial_model, direction = "forward", scope = list(lower=initial_model, upper=~crim+ zn+ indus+chas +nox+rm+ age +dis+rad+tax+ptratio+b+lstat ))
 ```
 
-
-
 ```{r}
 plot(forward_model, which=2)
+```
+
+On this Q-Q plot, we can see that the residuals are not normally distributed. This means that the model provided by the forward selection algorithm is not appropriate for our data...
+
+```{r}
 summary(forward_model)
 
 test_predictions <- predict(forward_model, newdata = test_data)
@@ -251,18 +269,19 @@ ggplot(residuals, aes(x = Predicted, y = Residuals)) +
   theme_minimal() +
   # Ensure the full range of predicted values is shown
   coord_cartesian(xlim = range(test_predictions))
-correlation_matrix <- cor(train_data)
 ```
 
-#### 4.4.3. Correlation Matrix
+
+
+#### 4.3.3. Correlation Matrix
 ```{r}
+correlation_matrix <- cor(train_data)
 ggplot(reshape2::melt(correlation_matrix), aes(x = Var1, y = Var2, fill = value)) +
   geom_tile() +
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limit = c(-1, 1), space = "Lab", name = "Pearson\nCorrelation") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1)) +
   coord_fixed()
-
 ```
 
 ## 5. Random forest model
@@ -279,14 +298,19 @@ ggplot(actual_vs_predicted_rf, aes(x = Actual, y = Predicted)) +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
   labs(title = "Actual vs Predicted Values (Random Forest)", x = "Actual Values", y = "Predicted Values") +
   theme_minimal()
-
 ```
 
+As we can see, the model is not very good. We can try to improve it by using a tree. Intuitively, we can see that our data is segmented in three groups. One group is the one with the lowest medv, one group is the one with the highest medv and the third group is in between. But let's use trees to segment these groups correctly.
+
 ### 5.1. Decision Tree
+
+
+
 ```{r}
 # Plot a tree using rpart
 tree_model <- rpart(medv ~ ., data = train_data)
 
 rpart.plot(tree_model, cex = 0.8)
 ```
-As we can see, the model is not very good. We can try to improve it by using a tree. Intuitively, we can see that our data is segmented in three groups. One group is the one with the lowest medv, one group is the one with the highest medv and the third group is in between. But let's use trees to segment these groups correctly.
+
+We can see that the two variables `lstat` and `rm` are significant as we have deduced it intuitively before.
