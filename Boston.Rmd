@@ -57,7 +57,7 @@ ggplot(BostonHousing, aes(x = medv)) +
 ## **2. Correlations Between Variables**
 We compute the correlation matrix and display values associated with `medv`.  
 
-```{r}
+```{r, echo=FALSE}
 # Compute correlation matrix
 cor_matrix <- cor(BostonHousing)
 
@@ -172,7 +172,7 @@ summary(reg_multi)
 
 To start, we can try to use the backward selection algorithm to find the best linear regression model to predict `medv`. But first, let's try to add all the variables to the model to see what happens.
 
-```{r}
+```{r, echo=FALSE}
 model <- lm(medv ~ ., data = BostonHousing)
 
 summary(model)
@@ -181,7 +181,7 @@ summary(model)
 
 Obviously, some modalities are not significant (e.g. `indus` or `age`). So let's try to use the backward selection algorithm to find the best model.
 
-```{r}
+```{r, echo=FALSE}
 backward_model <- step(model, direction = "backward", trace = FALSE)
 
 summary(backward_model)
@@ -195,7 +195,7 @@ Though, after plotting the model, we can see on the Q-Q plot that the residuals 
 
 ### 4.2 Multiple linear regression with normalized data and backward selection
 
-```{r}
+```{r, echo=FALSE}
 normalized_data <- preProcess(BostonHousing, method = c("center", "scale"))
 
 normalized_data <- predict(normalized_data, BostonHousing)
@@ -204,7 +204,7 @@ normalized_data <- predict(normalized_data, BostonHousing)
 
 #### 4.2.1 Boxplots
 
-```{r}
+```{r, echo=FALSE}
 boxplot(BostonHousing)
 boxplot(normalized_data)
 ```
@@ -213,7 +213,7 @@ The goal of these boxplots is to show how the data is distributed. We can see on
 
 #### 4.2.2 Modelization
 
-```{r}
+```{r, echo=FALSE}
 model <- lm(medv ~ ., data = normalized_data)
 summary(model)
 backward_model <- step(model, direction = "backward", trace = FALSE)
@@ -228,7 +228,7 @@ On our normalized data, we can see that our model didn't change much. The only o
 ### 4.3. Forward selection
 #### 4.3.1. Sampling data
 
-```{r}
+```{r, echo=FALSE}
 # Load necessary libraries
 set.seed(123)
 sample_size <- floor(0.8 * nrow(BostonHousing))
@@ -243,17 +243,17 @@ This time we will use the `stepAIC` function to apply the forward selection algo
 
 #### 4.3.2. Applying the algorithm
 
-```{r}
+```{r, echo=FALSE}
 forward_model <- stepAIC(initial_model, direction = "forward", scope = list(lower=initial_model, upper=~crim+ zn+ indus+chas +nox+rm+ age +dis+rad+tax+ptratio+b+lstat ))
 ```
 
-```{r}
+```{r, echo=FALSE}
 plot(forward_model, which=2)
 ```
 
 On this Q-Q plot, we can see that the residuals are not normally distributed. This means that the model provided by the forward selection algorithm is not appropriate for our data...
 
-```{r}
+```{r, echo=FALSE}
 summary(forward_model)
 
 test_predictions <- predict(forward_model, newdata = test_data)
@@ -274,7 +274,7 @@ ggplot(residuals, aes(x = Predicted, y = Residuals)) +
 
 
 #### 4.3.3. Correlation Matrix
-```{r}
+```{r, echo=FALSE}
 correlation_matrix <- cor(train_data)
 ggplot(reshape2::melt(correlation_matrix), aes(x = Var1, y = Var2, fill = value)) +
   geom_tile() +
@@ -285,7 +285,7 @@ ggplot(reshape2::melt(correlation_matrix), aes(x = Var1, y = Var2, fill = value)
 ```
 
 ## 5. Random forest model
-```{r}
+```{r, echo=FALSE}
 set.seed(123)
 rf_model <- randomForest(medv ~ ., data = train_data, importance = TRUE)
 rf_predictions <- predict(rf_model, newdata = test_data)
@@ -306,7 +306,7 @@ As we can see, the model is not very good. We can try to improve it by using a t
 
 
 
-```{r}
+```{r, echo=FALSE}
 # Plot a tree using rpart
 tree_model <- rpart(medv ~ ., data = train_data)
 
